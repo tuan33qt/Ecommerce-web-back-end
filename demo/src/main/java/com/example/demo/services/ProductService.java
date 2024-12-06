@@ -8,12 +8,15 @@ import com.example.demo.models.ProductImage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
+import java.util.List;
+
 public interface ProductService {
     public Product createProduct(ProductDTO productDTO) throws DataNotFoundException;
     Product getProductById(long id) throws Exception;
-    Page<Product> getAllProducts(PageRequest pageRequest);
+    List<Product> getAllProducts();
     Product updateProduct(long id,ProductDTO productDTO) throws DataNotFoundException;
     void deleteProduct(long id);
     boolean existsByName(String name);
     ProductImage createProductImage(Long productId, ProductImageDTO productImageDTO) throws  Exception;
+    public List<ProductImage> getProductImagesByProductId(Long productId);
 }

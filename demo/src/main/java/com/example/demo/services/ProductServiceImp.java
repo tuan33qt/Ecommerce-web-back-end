@@ -14,6 +14,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImp implements ProductService {
@@ -31,6 +33,7 @@ public class ProductServiceImp implements ProductService {
                 .description(productDTO.getDescription())
                 .quantity(productDTO.getQuantity())
                 .color(productDTO.getColor())
+                .color2(productDTO.getColor2())
                 .code(productDTO.getCode())
                 .category(existsCategory)
                 .build();
@@ -44,9 +47,9 @@ public class ProductServiceImp implements ProductService {
     }
 
     @Override
-    public Page<Product> getAllProducts(PageRequest pageRequest) {
+    public List<Product> getAllProducts() {
         // lấy danh sách sản phẩm theo trang và giới hạn
-        return productRepository.findAll(pageRequest);
+        return productRepository.findAll();
     }
 
     @Override
@@ -62,6 +65,7 @@ public class ProductServiceImp implements ProductService {
             existsProduct.setQuantity(productDTO.getQuantity());
             existsProduct.setUrl(productDTO.getUrl());
             existsProduct.setColor(productDTO.getColor());
+            existsProduct.setColor2(productDTO.getColor2());
             existsProduct.setDescription(productDTO.getCode());
             return productRepository.save(existsProduct);
         }
@@ -91,5 +95,8 @@ public class ProductServiceImp implements ProductService {
             throw new DataNotFoundException("size must be large 5");
         }
          return  productImageRepository.save(newProductImage);
+    }
+    public List<ProductImage> getProductImagesByProductId(Long productId) {
+        return productImageRepository.findByProductId(productId);
     }
 }

@@ -24,5 +24,6 @@ public class ProductDTO {
     @JsonProperty("category_id")
     private Long categoryId;
     private String color;
+    private String color2;
     private String code;
 }

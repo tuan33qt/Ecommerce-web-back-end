@@ -5,13 +5,15 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.util.List;
+
 @Data
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OderDTO {
+public class OrderDTO {
     @JsonProperty("user_id")
     @Min(value = 1,message = "userId must be greater 0")
     private Long userId;
@@ -28,4 +30,6 @@ public class OderDTO {
     private Float totalMoney;
     @JsonProperty("payment_method")
     private String paymentMethod;
+    @JsonProperty("cart_items")
+    private List<CartItemDTO> cartItems;
 }

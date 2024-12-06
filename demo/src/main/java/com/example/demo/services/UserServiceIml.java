@@ -1,19 +1,27 @@
 package com.example.demo.services;
 
 import com.example.demo.components.JwtTokenUtil;
+import com.example.demo.dto.UpdateUserDTO;
 import com.example.demo.dto.UserDTO;
 import com.example.demo.exceptions.DataNotFoundException;
 import com.example.demo.models.Role;
 import com.example.demo.models.User;
 import com.example.demo.repositories.RoleRepository;
 import com.example.demo.repositories.UserRepository;
+import com.example.demo.response.UserResponse;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.Optional;
 
@@ -42,7 +50,7 @@ public class UserServiceIml implements UserService {
                     .password(userDTO.getPassword())
                     .build();
             Role role = roleRepository.findById(userDTO.getRoleId())
-                    .orElseThrow(() -> new RuntimeException("user not found"));
+                    .orElseThrow(() -> new RuntimeException("Role not found"));
             newUser.setRole(role);
             //kiem tra neu la fb or googleid, thi kh yeu cau password
             if (userDTO.getFacebookAccountId()==0 && userDTO.getGoogleAccountId()==0) {
@@ -73,4 +81,68 @@ public class UserServiceIml implements UserService {
             authenticationManager.authenticate(authenticationToken);
             return jwtTokenUtil.generateToken(existUser);
     }
+
+    @Override
+    public User getUserDetailsFromToken(String token) throws Exception {
+        if(jwtTokenUtil.isTokenExpired(token)) {
+            throw new Exception("Token is expired");
+        }
+        String userName = jwtTokenUtil.extractUserName(token);
+        if (userName == null || userName.isEmpty()) {
+            throw new Exception("Invalid token: username not found");
+        }
+        Optional<User> user = userRepository.findByUserName(userName);
+
+        if (user.isPresent()) {
+            return user.get();
+        } else {
+            throw new Exception("User not found");
+        }
+    }
+
+    @Override
+    public User updateUser(Long userId, UpdateUserDTO updatedUserDTO) throws Exception {
+        User existingUser = userRepository.findById(userId)
+                .orElseThrow(() -> new DataNotFoundException("User not found"));
+
+        // Kiểm tra xem username mới có giống username cũ không
+        String newUserName = updatedUserDTO.getUserName();
+        if (!existingUser.getUsername().equals(newUserName) &&
+                userRepository.existsByUserName(newUserName)) {
+            throw new DataIntegrityViolationException("Phone number already exists");
+        }
+
+        // Update user tu dto
+        if (updatedUserDTO.getFullName() != null) {
+            existingUser.setFullName(updatedUserDTO.getFullName());
+        }
+        if (newUserName != null) {
+            existingUser.setUserName(newUserName);
+        }
+        if (updatedUserDTO.getAddress() != null) {
+            existingUser.setAddress(updatedUserDTO.getAddress());
+        }
+        if (updatedUserDTO.getDateOfBirth() != null) {
+            existingUser.setDateOfBirth(updatedUserDTO.getDateOfBirth());
+        }
+        if (updatedUserDTO.getFacebookAccountId() > 0) {
+            existingUser.setFacebookAccountId(updatedUserDTO.getFacebookAccountId());
+        }
+        if (updatedUserDTO.getGoogleAccountId() > 0) {
+            existingUser.setGoogleAccountId(updatedUserDTO.getGoogleAccountId());
+        }
+        if (updatedUserDTO.getPhoneNumber() != null) {
+            existingUser.setPhoneNumber(updatedUserDTO.getPhoneNumber());
+        }
+
+        // Update the password
+        if (updatedUserDTO.getPassword() != null
+                && !updatedUserDTO.getPassword().isEmpty()) {
+            String newPassword = updatedUserDTO.getPassword();
+            String encodedPassword = passwordEncoder.encode(newPassword);
+            existingUser.setPassword(encodedPassword);
+        }
+        return userRepository.save(existingUser);
+    }
+
 }

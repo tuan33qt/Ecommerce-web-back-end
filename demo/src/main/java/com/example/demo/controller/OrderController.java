@@ -1,6 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.OderDTO;
+import com.example.demo.dto.OrderDTO;
 import com.example.demo.models.Order;
 import com.example.demo.services.OrderService;
 import jakarta.validation.Valid;
@@ -17,9 +17,9 @@ import java.util.List;
 public class OrderController {
     private final OrderService orderService;
     @PostMapping("")
-    public ResponseEntity<?> createOrder(@RequestBody @Valid OderDTO oderDTO, BindingResult result) {
+    public ResponseEntity<?> createOrder(@RequestBody @Valid OrderDTO orderDTO, BindingResult result) {
         try {
-            Order order= orderService.createOder(oderDTO);
+            Order order= orderService.createOder(orderDTO);
             return ResponseEntity.ok(order);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -37,9 +37,9 @@ public class OrderController {
     }
     @PutMapping("/{id}") //admin
     public  ResponseEntity<?> updateOder(@Valid @PathVariable long id,
-                                         @Valid @RequestBody OderDTO oderDTO) {
+                                         @Valid @RequestBody OrderDTO orderDTO) {
         try {
-            Order order=orderService.updateOrder(id,oderDTO);
+            Order order=orderService.updateOrder(id, orderDTO);
             return ResponseEntity.ok(order);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

@@ -10,6 +10,9 @@ import com.example.demo.services.ProductService;
 import com.github.javafaker.Faker;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -29,17 +32,46 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 public class ProductController {
     private final ProductService productService;
 
+    @GetMapping("/images/{id}")
+    public ResponseEntity<List<String>> getProductImages(@PathVariable("id") Long productId) {
+        try {
+            // Lấy sản phẩm theo ID
+            Product product = productService.getProductById(productId);
+            if (product == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
 
+            // Lấy danh sách các ProductImage liên quan đến sản phẩm
+            List<ProductImage> productImages = productService.getProductImagesByProductId(productId);
+
+            // Nếu không có ảnh nào, trả về danh sách rỗng
+            if (productImages.isEmpty()) {
+                return ResponseEntity.ok(new ArrayList<>());
+            }
+
+            // Lấy danh sách ảnh đã mã hóa Base64
+            List<String> base64Images = new ArrayList<>();
+            for (ProductImage productImage : productImages) {
+                base64Images.add(productImage.getUrl()); // Giả sử trường URL chứa ảnh mã hóa Base64
+            }
+
+            return ResponseEntity.ok(base64Images);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(List.of("Có lỗi xảy ra: " + e.getMessage()));
+        }
+    }
     @PostMapping( "")
     public ResponseEntity<?> createProduct (@Valid @RequestBody
                                                      ProductDTO productDTO
@@ -48,6 +80,8 @@ public class ProductController {
         Product newProduct= productService.createProduct(productDTO);
         return ResponseEntity.ok(newProduct);
     }
+
+
     @PostMapping(value = "uploads/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadImages(@PathVariable("id") Long productId,
                                           @RequestParam("files") List<MultipartFile> files) {
@@ -61,13 +95,8 @@ public class ProductController {
             // Kiểm tra files có null không, nếu null thì khởi tạo danh sách trống
             files = files == null ? new ArrayList<MultipartFile>() : files;
 
-            // Kiểm tra số lượng file, không quá 5 file
-            if (files.size() > ProductImage.MAXIMUM_IMAGES) {
-                return ResponseEntity.badRequest().body("Maximum of 5 files are allowed");
-            }
-
-            // Danh sách lưu trữ ảnh sản phẩm
-            List<ProductImage> productImages = new ArrayList<>();
+            // Danh sách lưu trữ ảnh sản phẩm dưới dạng Base64
+            List<String> base64Images = new ArrayList<>();
 
             // Xử lý từng file
             for (MultipartFile file : files) {
@@ -89,22 +118,21 @@ public class ProductController {
                                 .body("File must be an image");
                     }
 
-                    // Lưu file vào hệ thống và lấy tên file
-                    String filename = storeFile(file);
-                    if (filename == null) {
-                        throw new IllegalArgumentException("File storage failed.");
-                    }
-                    // Lưu thông tin ảnh vào cơ sở dữ liệu
+                    // Chuyển đổi hình ảnh thành Base64
+                    String base64Image = storeFileAsBase64(file);
+
+                    // Lưu thông tin ảnh vào cơ sở dữ liệu (nếu cần thiết)
                     ProductImage productImage = productService.createProductImage(existsProduct.getId(),
                             ProductImageDTO.builder()
-                                    .url(filename)
+                                    .url(base64Image) // Lưu Base64 thay vì URL
                                     .build());
-                    productImages.add(productImage);
+
+                    base64Images.add(base64Image);
                 }
             }
 
-            // Trả về danh sách các ảnh đã lưu
-            return ResponseEntity.ok().body(productImages);
+            // Trả về danh sách các ảnh đã lưu dưới dạng Base64
+            return ResponseEntity.ok().body(base64Images);
         } catch (DataNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (IOException e) {
@@ -116,43 +144,30 @@ public class ProductController {
         }
     }
 
-    private String storeFile(MultipartFile file) throws IOException{
-        if (!isImageFile(file) || file.getOriginalFilename()== null) {
+    // Chuyển đổi file thành chuỗi Base64
+    private String storeFileAsBase64(MultipartFile file) throws IOException {
+        if (!isImageFile(file) || file.getOriginalFilename() == null) {
             throw new IOException("Invalid image format");
         }
-        String filename= StringUtils.cleanPath(file.getOriginalFilename());//làm sạch tên file
-        // thêm UUID vào trước tên file để đảm bảo tên file là duy nhât
-        String uniqueFilename= UUID.randomUUID().toString() + "_" + filename;
-        //đường dẫn mà bạn muốn lưu file
-        Path uploadDir= Paths.get("uploads");
-        //kiểm tra và tạo thư mục nếu nó không tồn tại
-        if (!Files.exists(uploadDir)) {
-            Files.createDirectories(uploadDir);
-        }
-        // đường dẫn đầy đủ đến file
-        Path destination=Paths.get(uploadDir.toString(),uniqueFilename);
-        //sao chép file vào thư mục đích
-        Files.copy(file.getInputStream(),destination, StandardCopyOption.REPLACE_EXISTING);
-        return uniqueFilename;
+
+        // Đọc toàn bộ dữ liệu hình ảnh vào mảng byte
+        byte[] imageBytes = file.getBytes();
+
+        // Mã hóa mảng byte thành chuỗi Base64
+        return Base64.getEncoder().encodeToString(imageBytes);
     }
+
+    // Kiểm tra file có phải là hình ảnh không
     private boolean isImageFile(MultipartFile file) {
-        String contentType=file.getContentType();
+        String contentType = file.getContentType();
         return contentType != null && contentType.startsWith("image/");
     }
+
     @GetMapping("")
-    public ResponseEntity<ProductResponse> getProducts(
-            @RequestParam("page") int page,
-            @RequestParam("limit") int limit
+    public ResponseEntity<List<Product>> getProducts(
     ) {
-        // tạo pageable từ thông tin page và limit
-        PageRequest pageRequest=PageRequest.of(page,limit,
-                Sort.by("createAt").descending());
-        Page<Product> productPage=productService.getAllProducts(pageRequest);
-        //lấy tổng số trang
-        int totalPages=productPage.getTotalPages();
-        List<Product> products=productPage.getContent();
-        ProductResponse response = new ProductResponse(products, totalPages);
-        return ResponseEntity.ok(response);
+        List<Product> products=productService.getAllProducts();
+        return ResponseEntity.ok(products);
     }
     @GetMapping("/{id}")
     public ResponseEntity<?> getProductById(@PathVariable("id") Long productId) {

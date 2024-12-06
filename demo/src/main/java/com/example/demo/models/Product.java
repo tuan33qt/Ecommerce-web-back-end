@@ -27,5 +27,6 @@ public class Product extends BaseEntity {
     @JoinColumn(name = "category_id")
     private Category category;
     private String color;
+    private String color2;
     private String code;
 }
