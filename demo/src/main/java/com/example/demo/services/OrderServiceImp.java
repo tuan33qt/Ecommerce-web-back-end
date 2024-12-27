@@ -42,6 +42,7 @@ public class OrderServiceImp implements OrderService {
         orderRepository.save(order);
         // Tạo danh sách các đối tượng OrderDetail từ cartItems
         List<OrderDetail> orderDetails = new ArrayList<>();
+        float totalMoney = 0.0f; // Khởi tạo totalMoney cho Order
         for (CartItemDTO cartItemDTO : orderDTO.getCartItems()) {
             // Tạo một đối tượng OrderDetail từ CartItemDTO
             OrderDetail orderDetail = new OrderDetail();
@@ -60,13 +61,27 @@ public class OrderServiceImp implements OrderService {
             orderDetail.setQuantity(quantity);
             // Các trường khác của OrderDetail nếu cần
             orderDetail.setPrice(product.getPrice());
+            orderDetail.setStatus("chưa thanh toán");
+            // Tính tiền cho mỗi sản phẩm và cộng vào tổng tiền của đơn hàng
+            float orderDetailTotalMoney = product.getPrice() * quantity;
+            orderDetail.setTotalMoney(orderDetailTotalMoney);  // Cập nhật tổng tiền cho OrderDetail
+            totalMoney += orderDetailTotalMoney;  // Cộng dồn tổng tiền
+
 
             // Thêm OrderDetail vào danh sách
             orderDetails.add(orderDetail);
         }
+        // Kiểm tra phương thức vận chuyển và thêm phí vận chuyển nếu cần
+        if ("express".equalsIgnoreCase(orderDTO.getPaymentShipping())) {
+            totalMoney += 25000; // Thêm phí vận chuyển 25,000 nếu là "express"
+        }
+        // Cập nhật tổng tiền cho Order
+        order.setTotalMoney(totalMoney);
+
         // Lưu danh sách OrderDetail vào cơ sở dữ liệu
         orderDetailRepository.saveAll(orderDetails);
         return order;
+
     }
 
     @Override
@@ -99,5 +114,10 @@ public class OrderServiceImp implements OrderService {
     @Override
     public List<Order> findByUserId(Long userId) {
        return orderRepository.findByUserId(userId);
+    }
+
+    @Override
+    public List<Order> findAllOrder() {
+        return orderRepository.findAll();
     }
 }

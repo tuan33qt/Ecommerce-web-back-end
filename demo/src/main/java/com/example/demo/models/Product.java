@@ -6,6 +6,8 @@ import lombok.*;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -27,6 +29,8 @@ public class Product extends BaseEntity {
     @JoinColumn(name = "category_id")
     private Category category;
     private String color;
-    private String color2;
     private String code;
+    private String color2;
+//    @OneToMany(mappedBy = "product",cascade = CascadeType.ALL)
+//    private List<Review> reviews=new ArrayList<>();
 }

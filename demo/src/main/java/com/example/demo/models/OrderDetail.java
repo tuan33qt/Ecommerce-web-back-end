@@ -25,4 +25,6 @@ public class OrderDetail {
     private int quantity;
     @Column(name = "total_money")
     private Float totalMoney;
+    @Column(name = "status")
+    private String status;
 }

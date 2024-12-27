@@ -26,6 +26,16 @@ public class CategoryController {
         List<Category> categories=categoryService.getAllCategories();
         return ResponseEntity.ok(categories);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getCategoryById(@PathVariable Long id) {
+        try {
+            Category category = categoryService.getCategoryById(id);
+            return ResponseEntity.ok(category); // Trả về danh mục nếu tìm thấy
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Category not found: " + e.getMessage());
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<String> updateCategory(@PathVariable Long id,@RequestBody CategoryDTO categoryDTO){
         categoryService.updateCategory(id,categoryDTO);

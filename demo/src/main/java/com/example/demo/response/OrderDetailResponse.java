@@ -24,14 +24,17 @@ public class OrderDetailResponse {
     private int quantity;
     @JsonProperty("total_money")
     private Float totalMoney;
+    @JsonProperty("product_name")
+    private String productName; // New field for product name
     public  static OrderDetailResponse fromOrderDetail(OrderDetail orderDetail) {
-       return OrderDetailResponse.builder()
+        return OrderDetailResponse.builder()
                 .id(orderDetail.getId())
                 .orderId(orderDetail.getOrder().getId())
                 .productId(orderDetail.getProduct().getId())
                 .price(orderDetail.getPrice())
                 .quantity(orderDetail.getQuantity())
                 .totalMoney(orderDetail.getTotalMoney())
+                .productName(orderDetail.getProduct().getName()) // Assuming getName() exists in Product class
                 .build();
 
     }

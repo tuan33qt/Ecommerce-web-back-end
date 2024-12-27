@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("api/v1/users")
 @RequiredArgsConstructor
@@ -71,5 +73,29 @@ public class UserController {
             return ResponseEntity.badRequest().build();
         }
     }
+    @GetMapping("")
+    public ResponseEntity<List<UserResponse>> getAllUser() {
+        List<UserResponse> user=userService.getAllUser();
+        return ResponseEntity.ok(user);
+    }
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserResponse> findByUserId(@PathVariable Long userId) {
+        try {
+            UserResponse userResponse = userService.findByUserId(userId);  // Gọi service để tìm user theo ID
+            return ResponseEntity.ok(userResponse);  // Trả về UserResponse dưới dạng JSON
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);  // Nếu không tìm thấy, trả về lỗi 404
+        }
+    }
+    @PutMapping("/deactivate/{userId}")
+    public ResponseEntity<User> deactivateUser(@PathVariable Long userId) {
+        try {
+            User user=userService.deactivateUser(userId);  // Gọi service để cập nhật trạng thái active thành false
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }
+
 
 }

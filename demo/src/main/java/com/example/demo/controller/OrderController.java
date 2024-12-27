@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.OrderDTO;
 import com.example.demo.models.Order;
+import com.example.demo.response.OrderResponse;
 import com.example.demo.services.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +21,16 @@ public class OrderController {
     public ResponseEntity<?> createOrder(@RequestBody @Valid OrderDTO orderDTO, BindingResult result) {
         try {
             Order order= orderService.createOder(orderDTO);
-            return ResponseEntity.ok(order);
+            return ResponseEntity.ok("order successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    @GetMapping("")
+    public ResponseEntity<List<OrderResponse>> getAllOrder() {
+        List<Order> orders = orderService.findAllOrder(); // Lấy danh sách đơn hàng từ service
+        List<OrderResponse> orderResponses = OrderResponse.fromOrderList(orders); // Chuyển đổi sang OrderResponse
+        return ResponseEntity.ok(orderResponses); // Trả về ResponseEntity chứa danh sách OrderResponse
     }
     @GetMapping("user/{user_id}")
     public ResponseEntity<?> getOrders(@Valid @PathVariable("user_id") Long userId) {
@@ -33,7 +40,8 @@ public class OrderController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getOrder(@Valid @PathVariable("id") Long orderId) {
         Order existOrder= orderService.getOrder(orderId);
-        return ResponseEntity.ok(existOrder);
+        OrderResponse orderResponse = OrderResponse.fromOrder(existOrder);
+        return ResponseEntity.ok(orderResponse);
     }
     @PutMapping("/{id}") //admin
     public  ResponseEntity<?> updateOder(@Valid @PathVariable long id,

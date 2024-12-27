@@ -11,4 +11,5 @@ public interface OrderService {
     Order updateOrder(Long id, OrderDTO orderDTO) throws Exception;
     void deleteOder(Long id);
     List<Order> findByUserId(Long userId);
+    List<Order> findAllOrder();
 }

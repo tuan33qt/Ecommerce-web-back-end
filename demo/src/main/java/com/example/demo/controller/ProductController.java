@@ -72,15 +72,14 @@ public class ProductController {
                     .body(List.of("Có lỗi xảy ra: " + e.getMessage()));
         }
     }
-    @PostMapping( "")
-    public ResponseEntity<?> createProduct (@Valid @RequestBody
-                                                     ProductDTO productDTO
-//
-    ) throws IOException, DataNotFoundException {
-        Product newProduct= productService.createProduct(productDTO);
+    @PostMapping("")
+    public ResponseEntity<?> createProduct(
+            @Valid @ModelAttribute ProductDTO productDTO, // Dữ liệu từ form
+            @RequestParam(value = "file", required = false) MultipartFile file // File upload
+    ) throws Exception {
+        Product newProduct = productService.createProduct(productDTO,file); // Gọi service với cả DTO và file
         return ResponseEntity.ok(newProduct);
     }
-
 
     @PostMapping(value = "uploads/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadImages(@PathVariable("id") Long productId,
@@ -188,34 +187,11 @@ public class ProductController {
         }
 
     }
-    @PostMapping("/generateFakeProducts")
-    public ResponseEntity<String> generateFakeProducts() {
-        Faker faker=new Faker();
-        for ( int i=0;i<1000;i++) {
-            String productName=faker.commerce().productName();
-            if(productService.existsByName(productName)) {
-                continue;
-            }
-            ProductDTO productDTO=ProductDTO.builder()
-                    .name(productName)
-                    .price((float)faker.number().numberBetween(1,9000000))
-                    .description(faker.lorem().sentence())
-                    .quantity((long)faker.number().numberBetween(1,20))
-                    .categoryId((long)faker.number().numberBetween(2,5))
-                    .build();
-            try {
-                productService.createProduct(productDTO);
-            } catch (DataNotFoundException e) {
-                return ResponseEntity.badRequest().body(e.getMessage());
-            }
-        }
-        return ResponseEntity.ok("Fake products created successfully");
-    }
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProduct(@PathVariable("id") Long id,@RequestBody ProductDTO productDTO) {
         try {
             Product updateProduct=productService.updateProduct(id,productDTO);
-            return ResponseEntity.ok(updateProduct);
+            return ResponseEntity.ok("upload product successfully");
         } catch (DataNotFoundException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

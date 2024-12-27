@@ -23,4 +23,6 @@ public class OrderDetailDTO {
     @JsonProperty("total_money")
     @Min(value = 0,message = "total money must be greater or equal to 0")
     private Float totalMoney;
+    @JsonProperty("status")
+    private String status;
 }

@@ -23,7 +23,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -144,5 +146,39 @@ public class UserServiceIml implements UserService {
         }
         return userRepository.save(existingUser);
     }
+
+    @Override
+    public List<UserResponse> getAllUser() {
+        List<User> users = userRepository.findAll();
+
+        // Chuyển đổi từng User thành UserResponse và thu thập vào danh sách
+        return users.stream()
+                .map(UserResponse::fromUser) // Chuyển User sang UserResponse
+                .collect(Collectors.toList()); // Thu thập kết quả thành danh sách
+    }
+
+    @Override
+    public UserResponse findByUserId(Long userId) throws Exception {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new DataNotFoundException("User not found"));
+
+        // Chuyển đổi User thành UserResponse và trả về
+        return UserResponse.fromUser(user);
+    }
+
+    @Override
+    public User deactivateUser(Long userId) throws Exception {
+        // Tìm người dùng theo userId
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new DataNotFoundException("User not found"));
+
+        // Cập nhật trạng thái active thành false
+        user.setActive(false);
+
+        // Lưu người dùng đã được cập nhật
+        return userRepository.save(user);
+    }
+
+
 
 }

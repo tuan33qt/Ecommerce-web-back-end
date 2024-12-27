@@ -13,7 +13,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -22,14 +25,25 @@ public class ProductServiceImp implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductImageRepository productImageRepository;
+
+
     @Override
-    public Product createProduct(ProductDTO productDTO) throws DataNotFoundException {
-        Category existsCategory= categoryRepository.findById(productDTO.getCategoryId())
-                .orElseThrow(() ->new DataNotFoundException("can not find category id" + productDTO.getCategoryId()));
-        Product newProduct=Product.builder()
+    public Product createProduct(ProductDTO productDTO, MultipartFile file) throws Exception {
+        // Kiểm tra Category tồn tại
+        Category existsCategory = categoryRepository.findById(productDTO.getCategoryId())
+                .orElseThrow(() -> new DataNotFoundException("Cannot find category id " + productDTO.getCategoryId()));
+
+        // Kiểm tra file có tồn tại không, nếu có thì chuyển đổi thành Base64
+        String base64Url = null;
+        if (file != null && !file.isEmpty()) {
+            base64Url = convertFileToBase64(file); // Chuyển file thành Base64
+        }
+
+        // Tạo sản phẩm mới và gán các thông tin
+        Product newProduct = Product.builder()
                 .name(productDTO.getName())
                 .price(productDTO.getPrice())
-                .url(productDTO.getUrl())
+                .url(base64Url)  // Lưu Base64 vào trường URL
                 .description(productDTO.getDescription())
                 .quantity(productDTO.getQuantity())
                 .color(productDTO.getColor())
@@ -37,6 +51,8 @@ public class ProductServiceImp implements ProductService {
                 .code(productDTO.getCode())
                 .category(existsCategory)
                 .build();
+
+        // Lưu sản phẩm vào cơ sở dữ liệu
         return productRepository.save(newProduct);
     }
 
@@ -65,8 +81,8 @@ public class ProductServiceImp implements ProductService {
             existsProduct.setQuantity(productDTO.getQuantity());
             existsProduct.setUrl(productDTO.getUrl());
             existsProduct.setColor(productDTO.getColor());
+            existsProduct.setCode(productDTO.getCode());
             existsProduct.setColor2(productDTO.getColor2());
-            existsProduct.setDescription(productDTO.getCode());
             return productRepository.save(existsProduct);
         }
         return null;
@@ -98,5 +114,12 @@ public class ProductServiceImp implements ProductService {
     }
     public List<ProductImage> getProductImagesByProductId(Long productId) {
         return productImageRepository.findByProductId(productId);
+    }
+    private String convertFileToBase64(MultipartFile file) throws IOException {
+        // Đọc toàn bộ dữ liệu hình ảnh vào mảng byte
+        byte[] fileBytes = file.getBytes();
+
+        // Mã hóa mảng byte thành chuỗi Base64
+        return Base64.getEncoder().encodeToString(fileBytes);
     }
 }

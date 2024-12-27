@@ -14,9 +14,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderDTO {
-    @JsonProperty("user_id")
-    @Min(value = 1,message = "userId must be greater 0")
-    private Long userId;
     @JsonProperty("fullname")
     private String fullName;
     private String email;
@@ -28,8 +25,15 @@ public class OrderDTO {
     @JsonProperty("total_money")
     @Min(value = 0,message = "price must be greater or equal to 0")
     private Float totalMoney;
+    @JsonProperty("status")
+    private String status;
+    @JsonProperty("user_id")
+    @Min(value = 1,message = "userId must be greater 0")
+    private Long userId;
     @JsonProperty("payment_method")
     private String paymentMethod;
+    @JsonProperty("payment_shipping")
+    private String paymentShipping;
     @JsonProperty("cart_items")
     private List<CartItemDTO> cartItems;
 }
